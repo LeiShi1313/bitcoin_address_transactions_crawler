@@ -45,8 +45,8 @@ class WalletAddressSpider(scrapy.Spider):
 
     def start_requests(self):
         self.d = {}
-        limit = 50
-        offset = 0
+        limit = 5000
+        offset = 1000000
         logging.info("Loop init")
         while offset<self.max:
             print "Running at offset: {}".format(offset)
@@ -55,10 +55,12 @@ class WalletAddressSpider(scrapy.Spider):
                         """select addr, wallet_name, service_name, type_name, address_id
                         from addresses natural join wallets
                         natural join services natural join types
-                        where address_id>={} and address_id<{}""".format(offset, offset+limit))
+                        where address_id>={} and address_id<{} 
+                        and address_id%100 = 0""".format(offset, offset+limit))
                 results = self.cursor.fetchall()
+                offset += limit
                 if len(results) == 0:
-                    break
+                    continue
                 for addr, wallet, service, tp, index in results:
                     if self.db.find_one({'_id': addr}):
                         logging.info("{} {} skiped!".format(addr, index))
@@ -74,7 +76,6 @@ class WalletAddressSpider(scrapy.Spider):
                         url = url,
                         headers = self.headers,
                         callback = self.parse_address)
-                offset += limit
             except MySQLdb.Error, e:
                 print 'Error {} {}'.format(e.args[0], e.args[1])
 
