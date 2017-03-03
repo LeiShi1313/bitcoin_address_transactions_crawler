@@ -21,7 +21,9 @@ class WalletAddressSpider(scrapy.Spider):
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36'
             }
 
-    def __init__(self):
+    def __init__(self, offset=30000, limit=50000, mod=100, odd=2, *args, **kwargs):
+        super(WalletAddressSpider, self).__init__(*args, **kwargs)
+        self.offset, self.limit, self.mod, self.odd = offset, limit, mod, odd
         self.conn = MySQLdb.connect(
                 user = MySQLConfig['user'],
                 passwd = MySQLConfig['passwd'],
@@ -45,8 +47,8 @@ class WalletAddressSpider(scrapy.Spider):
 
     def start_requests(self):
         self.d = {}
-        limit = 5000
-        offset = 1000000
+        limit = self.limit
+        offset = self.offset
         logging.info("Loop init")
         while offset<self.max:
             print "Running at offset: {}".format(offset)
@@ -56,7 +58,7 @@ class WalletAddressSpider(scrapy.Spider):
                         from addresses natural join wallets
                         natural join services natural join types
                         where address_id>={} and address_id<{} 
-                        and address_id%100 = 0""".format(offset, offset+limit))
+                        and address_id%{} = {}""".format(offset, offset+limit, self.mod, self.odd))
                 results = self.cursor.fetchall()
                 offset += limit
                 if len(results) == 0:
